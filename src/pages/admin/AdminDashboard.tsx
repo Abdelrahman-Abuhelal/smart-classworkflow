@@ -1,82 +1,153 @@
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from 'react';
+import { StudentForm } from '../../components/forms/StudentForm';
+import { TeacherForm } from '../../components/forms/TeacherForm';
+import { ClassForm } from '../../components/forms/ClassForm';
+import { StorageService } from '../../services/storageService';
+import { Student, Teacher, Class } from '../../types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, School, GraduationCap, LogOut } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Navbar } from '../../components/layout/Navbar';
+import { FormDialog } from "../../components/common/FormDialog";
 
-const AdminDashboard = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
+export const AdminDashboard: React.FC = () => {
+  const [students, setStudents] = useState<Student[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("currentUser");
-    navigate("/");
-    toast({
-      title: "Logged out",
-      description: "You have been successfully logged out",
-    });
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = () => {
+    setStudents(StorageService.getStudents());
+    setTeachers(StorageService.getTeachers());
+    setClasses(StorageService.getClasses());
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <Button variant="destructive" onClick={handleLogout}>
-          <LogOut className="mr-2 h-4 w-4" /> Logout
-        </Button>
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Manage Classes</CardTitle>
-            <School className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <Link to="/admin/classes">
-              <Button className="w-full">View Classes</Button>
-            </Link>
-          </CardContent>
-        </Card>
+    <div>
+      <Navbar portalType="Admin" />
+      <div className="container mx-auto p-6">
+        <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+        
+        <Tabs defaultValue="students" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="students">Students</TabsTrigger>
+            <TabsTrigger value="teachers">Teachers</TabsTrigger>
+            <TabsTrigger value="classes">Classes</TabsTrigger>
+          </TabsList>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Manage Courses</CardTitle>
-            <BookOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <Link to="/admin/courses">
-              <Button className="w-full">View Courses</Button>
-            </Link>
-          </CardContent>
-        </Card>
+          <TabsContent value="students">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Manage Students</CardTitle>
+                  <FormDialog title="Student">
+                    <StudentForm onSuccess={loadData} />
+                  </FormDialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Class</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {students.map((student) => {
+                      const studentClass = classes.find(c => c.id === student.classId);
+                      return (
+                        <TableRow key={student.id}>
+                          <TableCell>{student.name}</TableCell>
+                          <TableCell>{student.email}</TableCell>
+                          <TableCell>{studentClass ? studentClass.name : 'Not Assigned'}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Manage Teachers</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <Link to="/admin/teachers">
-              <Button className="w-full">View Teachers</Button>
-            </Link>
-          </CardContent>
-        </Card>
+          <TabsContent value="teachers">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Manage Teachers</CardTitle>
+                  <FormDialog title="Teacher">
+                    <TeacherForm onSuccess={loadData} />
+                  </FormDialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Subjects</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {teachers.map((teacher) => (
+                      <TableRow key={teacher.id}>
+                        <TableCell>{teacher.name}</TableCell>
+                        <TableCell>{teacher.email}</TableCell>
+                        <TableCell>{teacher.subjects.join(", ")}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Manage Students</CardTitle>
-            <GraduationCap className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <Link to="/admin/students">
-              <Button className="w-full">View Students</Button>
-            </Link>
-          </CardContent>
-        </Card>
+          <TabsContent value="classes">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Manage Classes</CardTitle>
+                  <FormDialog title="Class">
+                    <ClassForm onSuccess={loadData} />
+                  </FormDialog>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Schedule</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {classes.map((classItem) => (
+                      <TableRow key={classItem.id}>
+                        <TableCell>{classItem.name}</TableCell>
+                        <TableCell>{classItem.subject}</TableCell>
+                        <TableCell>{classItem.schedule}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
 };
-
-export default AdminDashboard;

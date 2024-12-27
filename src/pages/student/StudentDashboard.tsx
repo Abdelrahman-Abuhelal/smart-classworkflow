@@ -4,6 +4,7 @@ import { LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useState, useEffect } from "react";
+import { Navbar } from '../../components/layout/Navbar';
 
 interface Lesson {
   id: string;
@@ -12,7 +13,7 @@ interface Lesson {
   content: string;
 }
 
-const StudentDashboard = () => {
+export const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -32,31 +33,28 @@ const StudentDashboard = () => {
   };
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Student Dashboard</h1>
-        <Button variant="destructive" onClick={handleLogout}>
-          <LogOut className="mr-2 h-4 w-4" /> Logout
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {lessons.map((lesson) => (
-          <Card key={lesson.id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle>{lesson.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">{lesson.description}</p>
-              <Button 
-                className="w-full"
-                onClick={() => navigate(`/student/lesson/${lesson.id}`)}
-              >
-                View Lesson
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
+    <div>
+      <Navbar portalType="Student" />
+      <div className="container mx-auto p-6">
+        <h1 className="text-3xl font-bold mb-6">Student Dashboard</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {lessons.map((lesson) => (
+            <Card key={lesson.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>{lesson.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">{lesson.description}</p>
+                <Button 
+                  className="w-full"
+                  onClick={() => navigate(`/student/lesson/${lesson.id}`)}
+                >
+                  View Lesson
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );
