@@ -1,12 +1,30 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, BookOpen, School, GraduationCap } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Users, BookOpen, School, GraduationCap, LogOut } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const handleLogout = () => {
+    localStorage.removeItem("currentUser");
+    navigate("/");
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out",
+    });
+  };
+
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <Button variant="destructive" onClick={handleLogout}>
+          <LogOut className="mr-2 h-4 w-4" /> Logout
+        </Button>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
