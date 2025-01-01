@@ -1,71 +1,128 @@
-import { Student, Teacher, Class } from '../types';
+import { User, Student, Teacher, Lesson } from '../types';
 import { getLocalStorage, setLocalStorage } from '../utils/localStorage';
 
 const STORAGE_KEYS = {
+  USERS: 'users',
   STUDENTS: 'students',
   TEACHERS: 'teachers',
-  CLASSES: 'classes',
+  LESSONS: 'lessons',
 };
 
 export const StorageService = {
-  // Students
-  getStudents: (): Student[] => {
-    return getLocalStorage(STORAGE_KEYS.STUDENTS) || [];
-  },
-  
-  addStudent: (student: Student): void => {
-    const students = StorageService.getStudents();
-    students.push(student);
-    setLocalStorage(STORAGE_KEYS.STUDENTS, students);
+  // User Management
+  getUsers: (): User[] => {
+    return getLocalStorage(STORAGE_KEYS.USERS) || [];
   },
 
-  // Teachers
+  addUser: (user: User): void => {
+    const users = StorageService.getUsers();
+    users.push(user);
+    setLocalStorage(STORAGE_KEYS.USERS, users);
+  },
+
+  deleteUser: (userId: string): void => {
+    const users = StorageService.getUsers();
+    const filteredUsers = users.filter(u => u.id !== userId);
+    setLocalStorage(STORAGE_KEYS.USERS, filteredUsers);
+  },
+
+  getUserByEmail: (email: string): User | undefined => {
+    const users = StorageService.getUsers();
+    return users.find(user => user.email === email);
+  },
+
+  getCurrentUser: (): User | null => {
+    return getLocalStorage('currentUser');
+  },
+
+  setCurrentUser: (user: User): void => {
+    setLocalStorage('currentUser', user);
+  },
+
+  logout: (): void => {
+    localStorage.removeItem('currentUser');
+  },
+
+  // Students
+  getStudents: (): Student[] => {
+    const users = StorageService.getUsers();
+    return users
+      .filter(user => user.role === 'student')
+      .map(user => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      }));
+  },
+
+  addStudent: (student: Student): void => {
+    // No need to store separately anymore
+  },
+
+  deleteStudent: (studentId: string): void => {
+    // Handled by deleteUser
+  },
+
+  // Teachers (similar to Students)
   getTeachers: (): Teacher[] => {
-    return getLocalStorage(STORAGE_KEYS.TEACHERS) || [];
+    const users = StorageService.getUsers();
+    return users
+      .filter(user => user.role === 'teacher')
+      .map(user => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      }));
   },
 
   addTeacher: (teacher: Teacher): void => {
-    const teachers = StorageService.getTeachers();
-    teachers.push(teacher);
-    setLocalStorage(STORAGE_KEYS.TEACHERS, teachers);
+    // No need to store separately anymore
   },
 
-  // Classes
-  getClasses: (): Class[] => {
-    return getLocalStorage(STORAGE_KEYS.CLASSES) || [];
+  deleteTeacher: (teacherId: string): void => {
+    // Handled by deleteUser
   },
 
-  addClass: (classData: Class): void => {
-    const classes = StorageService.getClasses();
-    classes.push(classData);
-    setLocalStorage(STORAGE_KEYS.CLASSES, classes);
+  // Lessons
+  getLessons: (): Lesson[] => {
+    return getLocalStorage(STORAGE_KEYS.LESSONS) || [];
   },
 
-  // Update methods
-  updateStudent: (updatedStudent: Student): void => {
-    const students = StorageService.getStudents();
-    const index = students.findIndex(s => s.id === updatedStudent.id);
+  getLessonsByTeacher: (teacherId: string): Lesson[] => {
+    const lessons = StorageService.getLessons();
+    return lessons.filter(lesson => lesson.teacherId === teacherId);
+  },
+
+  getLessonsByStudent: (studentId: string): Lesson[] => {
+    console.log("Getting lessons for student:", studentId); // Debug log
+    const lessons = StorageService.getLessons();
+    console.log("All lessons:", lessons); // Debug log
+    const studentLessons = lessons.filter(lesson => 
+      lesson.studentIds.includes(studentId) && 
+      lesson.status === 'published'
+    );
+    console.log("Filtered lessons:", studentLessons); // Debug log
+    return studentLessons;
+  },
+
+  addLesson: (lesson: Lesson): void => {
+    const lessons = StorageService.getLessons();
+    lessons.push(lesson);
+    setLocalStorage(STORAGE_KEYS.LESSONS, lessons);
+  },
+
+  updateLesson: (updatedLesson: Lesson): void => {
+    const lessons = StorageService.getLessons();
+    const index = lessons.findIndex(l => l.id === updatedLesson.id);
     if (index !== -1) {
-      students[index] = updatedStudent;
-      setLocalStorage(STORAGE_KEYS.STUDENTS, students);
+      lessons[index] = updatedLesson;
+      setLocalStorage(STORAGE_KEYS.LESSONS, lessons);
     }
   },
 
-  updateTeacher: (updatedTeacher: Teacher): void => {
-    const teachers = StorageService.getTeachers();
-    const index = teachers.findIndex(t => t.id === updatedTeacher.id);
-    if (index !== -1) {
-      teachers[index] = updatedTeacher;
-      setLocalStorage(STORAGE_KEYS.TEACHERS, teachers);
-    }
+  deleteLesson: (lessonId: string): void => {
+    const lessons = StorageService.getLessons();
+    const filteredLessons = lessons.filter(l => l.id !== lessonId);
+    setLocalStorage(STORAGE_KEYS.LESSONS, filteredLessons);
   },
-
-  updateClass: (updatedClass: Class): void => {
-    const classes = StorageService.getClasses();
-    const index = classes.findIndex(c => c.id === updatedClass.id);
-    if (index !== -1) {
-      classes[index] = updatedClass;
-      setLocalStorage(STORAGE_KEYS.CLASSES, classes);
-    }
-  }
 }; 

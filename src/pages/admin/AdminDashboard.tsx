@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { StudentForm } from '../../components/forms/StudentForm';
-import { TeacherForm } from '../../components/forms/TeacherForm';
-import { ClassForm } from '../../components/forms/ClassForm';
 import { StorageService } from '../../services/storageService';
-import { Student, Teacher, Class } from '../../types';
+import { User } from '../../types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -14,22 +11,40 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Trash } from "lucide-react";
 import { Navbar } from '../../components/layout/Navbar';
-import { FormDialog } from "../../components/common/FormDialog";
 
-export const AdminDashboard: React.FC = () => {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [teachers, setTeachers] = useState<Teacher[]>([]);
-  const [classes, setClasses] = useState<Class[]>([]);
+export const AdminDashboard = () => {
+  const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = () => {
-    setStudents(StorageService.getStudents());
-    setTeachers(StorageService.getTeachers());
-    setClasses(StorageService.getClasses());
+    setUsers(StorageService.getUsers());
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (!user) return;
+
+    // Remove from users
+    StorageService.deleteUser(userId);
+
+    // Remove from role-specific storage
+    if (user.role === 'student') {
+      StorageService.deleteStudent(userId);
+    } else if (user.role === 'teacher') {
+      StorageService.deleteTeacher(userId);
+    }
+
+    loadData();
+  };
+
+  const getUsersByRole = (role: 'admin' | 'teacher' | 'student') => {
+    return users.filter(user => user.role === role);
   };
 
   return (
@@ -38,114 +53,50 @@ export const AdminDashboard: React.FC = () => {
       <div className="container mx-auto p-6">
         <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
         
-        <Tabs defaultValue="students" className="space-y-4">
+        <Tabs defaultValue="students">
           <TabsList>
             <TabsTrigger value="students">Students</TabsTrigger>
             <TabsTrigger value="teachers">Teachers</TabsTrigger>
-            <TabsTrigger value="classes">Classes</TabsTrigger>
+            <TabsTrigger value="admins">Admins</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="students">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Manage Students</CardTitle>
-                  <FormDialog title="Student">
-                    <StudentForm onSuccess={loadData} />
-                  </FormDialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Class</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {students.map((student) => {
-                      const studentClass = classes.find(c => c.id === student.classId);
-                      return (
-                        <TableRow key={student.id}>
-                          <TableCell>{student.name}</TableCell>
-                          <TableCell>{student.email}</TableCell>
-                          <TableCell>{studentClass ? studentClass.name : 'Not Assigned'}</TableCell>
+          {['students', 'teachers', 'admins'].map((role) => (
+            <TabsContent key={role} value={role}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Manage {role.charAt(0).toUpperCase() + role.slice(1)}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {getUsersByRole(role.slice(0, -1) as 'admin' | 'teacher' | 'student').map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell>{user.name}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => handleDeleteUser(user.id)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="teachers">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Manage Teachers</CardTitle>
-                  <FormDialog title="Teacher">
-                    <TeacherForm onSuccess={loadData} />
-                  </FormDialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Subjects</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {teachers.map((teacher) => (
-                      <TableRow key={teacher.id}>
-                        <TableCell>{teacher.name}</TableCell>
-                        <TableCell>{teacher.email}</TableCell>
-                        <TableCell>{teacher.subjects.join(", ")}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="classes">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle>Manage Classes</CardTitle>
-                  <FormDialog title="Class">
-                    <ClassForm onSuccess={loadData} />
-                  </FormDialog>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Subject</TableHead>
-                      <TableHead>Schedule</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {classes.map((classItem) => (
-                      <TableRow key={classItem.id}>
-                        <TableCell>{classItem.name}</TableCell>
-                        <TableCell>{classItem.subject}</TableCell>
-                        <TableCell>{classItem.schedule}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ))}
         </Tabs>
       </div>
     </div>

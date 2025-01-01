@@ -1,24 +1,29 @@
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+  role: 'admin' | 'teacher' | 'student';
+}
+
 export interface Student {
   id: string;
   name: string;
   email: string;
-  classId: string;
-  enrolledClasses: string[];
 }
 
 export interface Teacher {
   id: string;
   name: string;
   email: string;
-  subjects: string[];
-  assignedClasses: string[];
 }
 
-export interface Class {
+export interface Lesson {
   id: string;
-  name: string;
-  subject: string;
+  title: string;
+  content: string;
   teacherId: string;
-  students: string[];
-  schedule: string;
+  studentIds: string[];
+  status: 'draft' | 'published';
+  createdAt: string;
 } 

@@ -1,69 +1,102 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { StorageService } from "../services/storageService";
+import { Student } from "../types";
+import { v4 as uuidv4 } from 'uuid';
+import { DialogClose } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-interface Lesson {
-  id: string;
-  title: string;
-  description: string;
-  content: string;
+interface LessonFormProps {
+  teacherId: string;
+  students: Student[];
+  onSuccess: () => void;
 }
 
-export const LessonForm = ({ onLessonAdded }: { onLessonAdded: () => void }) => {
-  const [open, setOpen] = useState(false);
-  const { toast } = useToast();
-  
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+export const LessonForm = ({ teacherId, students, onSuccess }: LessonFormProps) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    content: '',
+    studentIds: [] as string[]
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const lesson: Lesson = {
-      id: Date.now().toString(),
-      title: formData.get("title") as string,
-      description: formData.get("description") as string,
-      content: formData.get("content") as string,
+    
+    const newLesson = {
+      id: uuidv4(),
+      ...formData,
+      teacherId,
+      status: 'draft' as const,
+      createdAt: new Date().toISOString()
     };
-    
-    const lessons = JSON.parse(localStorage.getItem("lessons") || "[]");
-    lessons.push(lesson);
-    localStorage.setItem("lessons", JSON.stringify(lessons));
-    
-    toast({
-      title: "Success",
-      description: "Lesson created successfully",
-    });
-    
-    setOpen(false);
-    onLessonAdded();
+
+    StorageService.addLesson(newLesson);
+    setFormData({ title: '', content: '', studentIds: [] });
+    onSuccess();
+  };
+
+  const handleStudentSelection = (studentId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      studentIds: prev.studentIds.includes(studentId)
+        ? prev.studentIds.filter(id => id !== studentId)
+        : [...prev.studentIds, studentId]
+    }));
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" /> Add New Lesson
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Create New Lesson</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Input name="title" placeholder="Lesson Title" required />
-          </div>
-          <div>
-            <Input name="description" placeholder="Short Description" required />
-          </div>
-          <div>
-            <Textarea name="content" placeholder="Lesson Content" required />
-          </div>
-          <Button type="submit" className="w-full">Create Lesson</Button>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="title">Lesson Title</Label>
+        <Input
+          id="title"
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="content">Content</Label>
+        <Textarea
+          id="content"
+          value={formData.content}
+          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+          required
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Assign Students</Label>
+        <div className="grid grid-cols-2 gap-2">
+          {students.map((student) => (
+            <div 
+              key={student.id}
+              className={`p-2 border rounded cursor-pointer ${
+                formData.studentIds.includes(student.id) 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'hover:bg-muted'
+              }`}
+              onClick={() => handleStudentSelection(student.id)}
+            >
+              {student.name}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <DialogClose asChild>
+        <Button type="submit">Create Lesson</Button>
+      </DialogClose>
+    </form>
   );
 };

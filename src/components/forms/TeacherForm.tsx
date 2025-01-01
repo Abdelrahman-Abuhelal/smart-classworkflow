@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { DialogClose } from "@/components/ui/dialog";
 
 interface TeacherFormProps {
   onSuccess?: () => void;
@@ -14,20 +15,16 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    subjects: '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newTeacher: Teacher = {
       id: uuidv4(),
-      name: formData.name,
-      email: formData.email,
-      subjects: formData.subjects.split(',').map(s => s.trim()),
-      assignedClasses: [],
+      ...formData
     };
     StorageService.addTeacher(newTeacher);
-    setFormData({ name: '', email: '', subjects: '' });
+    setFormData({ name: '', email: '' });
     onSuccess?.();
   };
 
@@ -65,19 +62,9 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({ onSuccess }) => {
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="subjects">Subjects</Label>
-        <Input
-          id="subjects"
-          name="subjects"
-          value={formData.subjects}
-          onChange={handleChange}
-          placeholder="Subjects (comma-separated)"
-          required
-        />
-      </div>
-
-      <Button type="submit" className="w-full">Add Teacher</Button>
+      <DialogClose asChild>
+        <Button type="submit" className="w-full">Add Teacher</Button>
+      </DialogClose>
     </form>
   );
 }; 

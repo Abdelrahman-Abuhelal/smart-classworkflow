@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { StorageService } from "../services/storageService";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { defaultUsers } from "../services/defaultUsers";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "@/components/ui/use-toast";
+import { Separator } from "@/components/ui/separator";
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -15,43 +17,37 @@ export const Login = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const user = defaultUsers.find(u => 
-      u.email === formData.email && u.password === formData.password
-    );
 
-    if (user) {
-      localStorage.setItem('user', JSON.stringify(user));
-      switch (user.role) {
-        case 'admin':
-          navigate('/admin');
-          break;
-        case 'teacher':
-          navigate('/teacher');
-          break;
-        case 'student':
-          navigate('/student');
-          break;
-      }
-    } else {
-      alert('Invalid credentials');
+    const user = StorageService.getUserByEmail(formData.email);
+
+    if (!user || user.password !== formData.password) {
+      toast({
+        title: "Error",
+        description: "Invalid email or password",
+        variant: "destructive",
+      });
+      return;
     }
+
+    StorageService.setCurrentUser(user);
+    navigate(`/${user.role}`);
   };
 
-  const handleQuickLogin = (userType: 'admin' | 'teacher' | 'student') => {
-    const user = defaultUsers.find(u => u.role === userType);
-    if (user) {
-      setFormData({
-        email: user.email,
-        password: user.password,
-      });
-    }
+  const quickLogin = (role: 'admin' | 'teacher' | 'student') => {
+    const credentials = {
+      admin: { email: 'admin@gmail.com', password: 'admin' },
+      teacher: { email: 'teacher@gmail.com', password: 'teacher' },
+      student: { email: 'abd2@gmail.com', password: 'abd2' },
+    };
+
+    setFormData(credentials[role]);
   };
 
   return (
-    <div className="container mx-auto flex items-center justify-center min-h-screen">
-      <Card className="w-[400px]">
+    <div className="container mx-auto flex items-center justify-center min-h-screen p-4">
+      <Card className="w-full max-w-lg">
         <CardHeader>
-          <CardTitle>Login</CardTitle>
+          <CardTitle className="text-2xl text-center">Login</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -65,6 +61,7 @@ export const Login = () => {
                 required
               />
             </div>
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <Input
@@ -75,21 +72,44 @@ export const Login = () => {
                 required
               />
             </div>
+
             <Button type="submit" className="w-full">Login</Button>
+
+            <p className="text-center text-sm text-muted-foreground">
+              Don't have an account?{" "}
+              <Button variant="link" className="p-0" onClick={() => navigate('/signup')}>
+                Sign Up
+              </Button>
+            </p>
           </form>
 
-          <div className="mt-6 space-y-2">
-            <p className="text-sm text-center text-muted-foreground">Quick Login:</p>
-            <div className="grid grid-cols-3 gap-2">
-              <Button variant="outline" onClick={() => handleQuickLogin('admin')}>
-                Admin
-              </Button>
-              <Button variant="outline" onClick={() => handleQuickLogin('teacher')}>
-                Teacher
-              </Button>
-              <Button variant="outline" onClick={() => handleQuickLogin('student')}>
-                Student
-              </Button>
+          <div className="mt-6">
+            <Separator className="my-4" />
+            <div className="space-y-2">
+              <p className="text-sm text-center text-muted-foreground">Quick Login:</p>
+              <div className="grid grid-cols-3 gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => quickLogin('admin')}
+                  className="text-sm"
+                >
+                  Admin
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => quickLogin('teacher')}
+                  className="text-sm"
+                >
+                  Teacher
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => quickLogin('student')}
+                  className="text-sm"
+                >
+                  Student
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
